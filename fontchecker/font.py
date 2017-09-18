@@ -20,6 +20,20 @@ def loadfont(basedir):
         print('Font loaded: ' + names[i])
     return fonts
 
+def load_dataset(fonts, positive = 0):
+    X = []
+    for font, paths in fonts.iteritems():
+        print('********** Loading ' + font + ' **********')
+        for path in paths:
+            img = np.array(ndimage.imread(path, flatten = False))
+            img_flatten = img.reshape(1, 128 * 128)
+            X.append(img_flatten)
+    if (positive == 0):
+        Y = np.zeros((len(fonts), 1))
+    else:
+        Y = np.ones((len(fonts), 1))
+    return X, Y
+
 def getMaxLength(fonts):
     maxl = 0
     for font, paths in fonts.iteritems():
@@ -183,10 +197,11 @@ def main():
     #img = ndimage.imread(image_file, flatten=False)
     #plt.imshow(img, cmap='gray')
     #plt.show()
-    pos_dir = '/Users/james/Data/font_checker/positive_data'
-    cln_pos_dir = '/Users/james/Data/font_checker/clean_positive_data'
-    fonts = loadfont(pos_dir)
-    preprocess(fonts, 128, cln_pos_dir)
+    #pos_dir = '/Users/james/Data/font_checker/positive_data'
+    #cln_pos_dir = '/Users/james/Data/font_checker/clean_positive_data'
+    #preprocess(fonts, 128, cln_pos_dir)
+    fonts = loadfont(cln_pos_dir)
+
 
 if __name__=='__main__':
     main()
