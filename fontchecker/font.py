@@ -1,12 +1,58 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
 
-import matplotlib.pyplot as plt
 import numpy as np
-import tensorflow as tf
 import scipy
-from PIL import Image
+import os 
+import glob
+import matplotlib.pyplot as plt
+import tensorflow as tf
 from scipy import ndimage
+from PIL import Image
+
+def loadfont(basedir):
+	dirs = glob.glob(basedir + '/Aa*')
+	names = [os.path.basename(x)[2:] for x in dirs]
+	fonts = {}
+	for i in range(0, len(dirs)):
+		paths = glob.glob(x + '/uni*')
+		fonts[names[i]] = paths
+		print('Font loaded: ' + names[i])
+	return fonts
+
+def getMaxLength(fonts):
+	maxl = 0
+	for font, paths in fonts.iteritems():
+		print('********** ' + font + ' **********')
+		for path in paths:
+			#img = ndimage.imread(path)
+			#height, width = ndimage.imread(path).shape
+			with Image.open(path) as img:
+				width, height = img.size
+				maxl = max(maxh, height)
+				maxl = max(maxw, width)
+	print('max length: ' + maxl)
+	return maxl
+
+def preprocess(fonts, length, outdir):
+	if not os.path.exists(outdir):
+		os.makedirs(outdir)
+	for font, paths in fonts.iteritems():
+		outfontdir = os.path.join(outdir, 'Aa' + font)
+		print(outfontdir)
+		if not os.path.exists(outfontdir):
+			os.makedirs(outfontdir)		
+		for path in paths:
+			img = Image.open(path)
+			size = (length, length)
+			img.thumbnail(size)
+			img_padded = Image.new(img.mode, size, color = 255)
+			img_padded.paste(img,(int((size[0]-img.size[0])/2),int((size[1]-img.size[1])/2)))
+			directory, filename = os.path.split(path)
+			filename_out = filename.replace('uni', 'cln', 1)
+			tmp = os.path.join(outfontdir, filename_out)
+			img_padded.save(tmp)
+		print(font + ' preprocessed.')
 
 def create_placeholders(n_x, n_y):
 	X = tf.placeholder(dtype = tf.float32, shape=(n_x, None))
@@ -133,10 +179,14 @@ def model(X_train, Y_train, X_test, Y_test, learning_rate = 0.0001, num_epochs =
     return parameters
 
 def main():
-    img_path='/Users/james/Data/font_checker/positive_data/AaBuYu/uni4E1C_东.png'
-    img = ndimage.imread(img_path, flatten=False)
-    plt.imshow(img, cmap=plt.cm.gray)
-    plt.show()
+	#image_file = '/Users/jameszhao/projects/data/training_data/positive_data/AaYaotiaoshunv/uni8E92_躒.png'
+	#img = ndimage.imread(image_file, flatten=False)
+	#plt.imshow(img, cmap='gray')
+	#plt.show()
+	pos_dir = '/Users/jameszhao/projects/data/training_data/negative_data'
+	cln_pos_dir = '/Users/jameszhao/projects/data/training_data/clean_negative_data'
+	fonts = loadfont(pos_dir)
+	preprocess(fonts, 128, cln_pos_dir)
 
-if __name__ == '__main__':
-    main()
+if __name__=='__main__':
+	main()
