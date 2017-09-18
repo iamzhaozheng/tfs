@@ -11,94 +11,94 @@ from scipy import ndimage
 from PIL import Image
 
 def loadfont(basedir):
-	dirs = glob.glob(basedir + '/Aa*')
-	names = [os.path.basename(x)[2:] for x in dirs]
-	fonts = {}
-	for i in range(0, len(dirs)):
-		paths = glob.glob(x + '/uni*')
-		fonts[names[i]] = paths
-		print('Font loaded: ' + names[i])
-	return fonts
+    dirs = glob.glob(basedir + '/Aa*')
+    names = [os.path.basename(x)[2:] for x in dirs]
+    fonts = {}
+    for i in range(0, len(dirs)):
+        paths = glob.glob(x + '/uni*')
+        fonts[names[i]] = paths
+        print('Font loaded: ' + names[i])
+    return fonts
 
 def getMaxLength(fonts):
-	maxl = 0
-	for font, paths in fonts.iteritems():
-		print('********** ' + font + ' **********')
-		for path in paths:
-			#img = ndimage.imread(path)
-			#height, width = ndimage.imread(path).shape
-			with Image.open(path) as img:
-				width, height = img.size
-				maxl = max(maxh, height)
-				maxl = max(maxw, width)
-	print('max length: ' + maxl)
-	return maxl
+    maxl = 0
+    for font, paths in fonts.iteritems():
+        print('********** ' + font + ' **********')
+        for path in paths:
+            #img = ndimage.imread(path)
+            #height, width = ndimage.imread(path).shape
+            with Image.open(path) as img:
+                width, height = img.size
+                maxl = max(maxh, height)
+                maxl = max(maxw, width)
+    print('max length: ' + maxl)
+    return maxl
 
 def preprocess(fonts, length, outdir):
-	if not os.path.exists(outdir):
-		os.makedirs(outdir)
-	for font, paths in fonts.iteritems():
-		outfontdir = os.path.join(outdir, 'Aa' + font)
-		print(outfontdir)
-		if not os.path.exists(outfontdir):
-			os.makedirs(outfontdir)		
-		for path in paths:
-			img = Image.open(path)
-			size = (length, length)
-			img.thumbnail(size)
-			img_padded = Image.new(img.mode, size, color = 255)
-			img_padded.paste(img,(int((size[0]-img.size[0])/2),int((size[1]-img.size[1])/2)))
-			directory, filename = os.path.split(path)
-			filename_out = filename.replace('uni', 'cln', 1)
-			tmp = os.path.join(outfontdir, filename_out)
-			img_padded.save(tmp)
-		print(font + ' preprocessed.')
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+    for font, paths in fonts.iteritems():
+        outfontdir = os.path.join(outdir, 'Aa' + font)
+        print(outfontdir)
+        if not os.path.exists(outfontdir):
+            os.makedirs(outfontdir)     
+        for path in paths:
+            img = Image.open(path)
+            size = (length, length)
+            img.thumbnail(size)
+            img_padded = Image.new(img.mode, size, color = 255)
+            img_padded.paste(img,(int((size[0]-img.size[0])/2),int((size[1]-img.size[1])/2)))
+            directory, filename = os.path.split(path)
+            filename_out = filename.replace('uni', 'cln', 1)
+            tmp = os.path.join(outfontdir, filename_out)
+            img_padded.save(tmp)
+        print(font + ' preprocessed.')
 
 def create_placeholders(n_x, n_y):
-	X = tf.placeholder(dtype = tf.float32, shape=(n_x, None))
-	Y = tf.placeholder(dtype = tf.float32, shape=(n_y, None))
-	return X, Y
+    X = tf.placeholder(dtype = tf.float32, shape=(n_x, None))
+    Y = tf.placeholder(dtype = tf.float32, shape=(n_y, None))
+    return X, Y
 
 def initialize_parameters(n_x, n_y):
-	"""
-	LINEAR->RELU->LINEAR->RELU->LINEAR->SIGMOID
-	W1: [25, n_X]
-	b1: [25, 1]
-	W2: [12, 25]
-	b2: [12, 1]
-	W3: [n_y, 12]
-	b3: [n_y, 1]
-	"""
-	W1 = tf.get_variable('W1', [25, n_X], initializer = tf.contrib.layers.xavier_initializer())
-	b1 = tf.get_variable('b1', [25, 1], initializer = tf.zeros_initializer())
-	W2 = tf.get_variable('W2', [12, 25], initializer = tf.contrib.layers.xavier_initializer())
-	b2 = tf.get_variable('b2', [12, 1], initializer = tf.zeros_initializer())
-	W3 = tf.get_variable('W3', [n_y, 12], initializer = tf.contrib.layers.xavier_initializer())
-	b3 = tf.get_variable('b3', [n_y, 1], initializer = tf.zeros_initializer())
+    """
+    LINEAR->RELU->LINEAR->RELU->LINEAR->SIGMOID
+    W1: [25, n_X]
+    b1: [25, 1]
+    W2: [12, 25]
+    b2: [12, 1]
+    W3: [n_y, 12]
+    b3: [n_y, 1]
+    """
+    W1 = tf.get_variable('W1', [25, n_X], initializer = tf.contrib.layers.xavier_initializer())
+    b1 = tf.get_variable('b1', [25, 1], initializer = tf.zeros_initializer())
+    W2 = tf.get_variable('W2', [12, 25], initializer = tf.contrib.layers.xavier_initializer())
+    b2 = tf.get_variable('b2', [12, 1], initializer = tf.zeros_initializer())
+    W3 = tf.get_variable('W3', [n_y, 12], initializer = tf.contrib.layers.xavier_initializer())
+    b3 = tf.get_variable('b3', [n_y, 1], initializer = tf.zeros_initializer())
 
-	parameters = {'W1' : W1, 'b1' : b1, 'W2' : W2, 'b2' : b2, 'W3' : W3, 'b3' : b3}
-	return parameters
+    parameters = {'W1' : W1, 'b1' : b1, 'W2' : W2, 'b2' : b2, 'W3' : W3, 'b3' : b3}
+    return parameters
 
 def forward_propergation(X, parameters):
-	W1 = parameters['W1']
-	b1 = parameters['b1']
-	W2 = parameters['W2']
-	b2 = parameters['b2']
-	W3 = parameters['W3']
-	b3 = parameters['b3']
+    W1 = parameters['W1']
+    b1 = parameters['b1']
+    W2 = parameters['W2']
+    b2 = parameters['b2']
+    W3 = parameters['W3']
+    b3 = parameters['b3']
 
-	Z1 = tf.add(tf.matmul(W1, X), b1)
-	A1 = tf.nn.relu(Z1)
-	Z2 = tf.add(tf.matmul(W2, A1), b2)
-	A2 = tf.nn.relu(Z2)
-	Z3 = tf.add(tf.matmul(W3, A2), b3)
-	return Z3
+    Z1 = tf.add(tf.matmul(W1, X), b1)
+    A1 = tf.nn.relu(Z1)
+    Z2 = tf.add(tf.matmul(W2, A1), b2)
+    A2 = tf.nn.relu(Z2)
+    Z3 = tf.add(tf.matmul(W3, A2), b3)
+    return Z3
 
 def compute_cost(Z3, Y):
-	logits = tf.transpose(Z3)
-	labels = tf.transpose(Y)
-	cost = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits = logits, labels = labels))
-	return cost
+    logits = tf.transpose(Z3)
+    labels = tf.transpose(Y)
+    cost = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits = logits, labels = labels))
+    return cost
 
 def random_mini_batches(X, Y, mini_batch_size = 64):
     """
@@ -140,27 +140,27 @@ def random_mini_batches(X, Y, mini_batch_size = 64):
     return mini_batches
 
 def model(X_train, Y_train, X_test, Y_test, learning_rate = 0.0001, num_epochs = 1000, minibatch_size = 32):
-	ops.reset_default_graph()
-	(n_x, m) = X_train.shape
-	n_y = Y_train.shape[0]
-	costs = []
-	X, Y = create_placeholders(n_x, n_y)
-	parameters = initialize_parameters(n_x, n_y)
-	Z3 = forward_propergation(X, parameters)
-	cost = compute_cost(Z3, Y)
-	optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate).optimize(cost)
-	init = tf.global_variables_initializer()
-	with tf.Session as sess:
-		sess.run(init)
-		for epoch in range(num_epochs):
-			epoch_cost = 0
-			num_minibatches = int(m / minibatch_size)
-			minibatches = random_mini_batches(X_train, Y_train, minibatch_size)
+    ops.reset_default_graph()
+    (n_x, m) = X_train.shape
+    n_y = Y_train.shape[0]
+    costs = []
+    X, Y = create_placeholders(n_x, n_y)
+    parameters = initialize_parameters(n_x, n_y)
+    Z3 = forward_propergation(X, parameters)
+    cost = compute_cost(Z3, Y)
+    optimizer = tf.train.AdamOptimizer(learning_rate = learning_rate).optimize(cost)
+    init = tf.global_variables_initializer()
+    with tf.Session as sess:
+        sess.run(init)
+        for epoch in range(num_epochs):
+            epoch_cost = 0
+            num_minibatches = int(m / minibatch_size)
+            minibatches = random_mini_batches(X_train, Y_train, minibatch_size)
 
-			for minibatch in minibatches:
-				(minibatch_X, minibatch_Y) = minibatch
-				_, minibatch_cost = sess.run([optimizer, cost], feed_dict = {X:minibatch_X, Y:minibatch_Y})
-				epoch_cost += minibatch_cost / num_minibatches
+            for minibatch in minibatches:
+                (minibatch_X, minibatch_Y) = minibatch
+                _, minibatch_cost = sess.run([optimizer, cost], feed_dict = {X:minibatch_X, Y:minibatch_Y})
+                epoch_cost += minibatch_cost / num_minibatches
             if epoch % 100 == 0:
                 print ("Cost after epoch %i: %f" % (epoch, epoch_cost))
             if epoch % 5 == 0:
@@ -179,14 +179,14 @@ def model(X_train, Y_train, X_test, Y_test, learning_rate = 0.0001, num_epochs =
     return parameters
 
 def main():
-	#image_file = '/Users/jameszhao/projects/data/training_data/positive_data/AaYaotiaoshunv/uni8E92_躒.png'
-	#img = ndimage.imread(image_file, flatten=False)
-	#plt.imshow(img, cmap='gray')
-	#plt.show()
-	pos_dir = '/Users/jameszhao/projects/data/training_data/negative_data'
-	cln_pos_dir = '/Users/jameszhao/projects/data/training_data/clean_negative_data'
-	fonts = loadfont(pos_dir)
-	preprocess(fonts, 128, cln_pos_dir)
+    #image_file = '/Users/jameszhao/projects/data/training_data/positive_data/AaYaotiaoshunv/uni8E92_躒.png'
+    #img = ndimage.imread(image_file, flatten=False)
+    #plt.imshow(img, cmap='gray')
+    #plt.show()
+    pos_dir = '/Users/james/Data/font_checker/positive_data'
+    cln_pos_dir = '/Users/james/Data/font_checker/clean_positive_data'
+    fonts = loadfont(pos_dir)
+    preprocess(fonts, 128, cln_pos_dir)
 
 if __name__=='__main__':
-	main()
+    main()
