@@ -15,7 +15,7 @@ def loadfont(basedir):
     names = [os.path.basename(x)[2:] for x in dirs]
     fonts = {}
     for i in range(0, len(dirs)):
-        paths = glob.glob(x + '/uni*')
+        paths = glob.glob(dirs[i] + '/uni*')
         fonts[names[i]] = paths
         print('Font loaded: ' + names[i])
     return fonts
@@ -27,12 +27,17 @@ def load_dataset(fonts, positive = 0):
         for path in paths:
             img = np.array(ndimage.imread(path, flatten = False))
             img_flatten = img.reshape(1, 128 * 128)
+            img_flatten.append(positive)
             X.append(img_flatten)
     if (positive == 0):
         Y = np.zeros((len(fonts), 1))
     else:
         Y = np.ones((len(fonts), 1))
     return X, Y
+
+def hash_unicode_from_filename(filename):
+    h = int(filename[4:8], 16) - 0x4e00
+    return h
 
 def getMaxLength(fonts):
     maxl = 0
@@ -55,7 +60,7 @@ def preprocess(fonts, length, outdir):
         outfontdir = os.path.join(outdir, 'Aa' + font)
         print(outfontdir)
         if not os.path.exists(outfontdir):
-            os.makedirs(outfontdir)     
+            os.makedirs(outfontdir)
         for path in paths:
             img = Image.open(path)
             size = (length, length)
@@ -197,10 +202,16 @@ def main():
     #img = ndimage.imread(image_file, flatten=False)
     #plt.imshow(img, cmap='gray')
     #plt.show()
-    #pos_dir = '/Users/james/Data/font_checker/positive_data'
-    #cln_pos_dir = '/Users/james/Data/font_checker/clean_positive_data'
-    #preprocess(fonts, 128, cln_pos_dir)
-    fonts = loadfont(cln_pos_dir)
+    pos_dir = '/Users/james/Data/font_checker/positive_data'
+    neg_dir = '/Users/james/Data/font_checker/negative_data'
+    cln_pos_dir = '/Users/james/Data/font_checker/clean_positive_data'
+    cln_neg_dir = '/Users/james/Data/font_checker/clean_negative_data'
+    pos_fonts = loadfont(pos_dir)
+    neg_fonts = loadfont(neg_dir)
+    pos_X, pos_Y = load_dataset(pos_fonts, 0)
+    neg_X, neg_Y = load_dataset(neg_fonts, 1)
+    #preprocess(pos_fonts, 128, cln_pos_dir)
+    #preprocess(neg_fonts, 128, cln_neg_dir)
 
 
 if __name__=='__main__':
